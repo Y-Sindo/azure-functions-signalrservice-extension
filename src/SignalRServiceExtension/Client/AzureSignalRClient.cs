@@ -40,23 +40,22 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
         {
             var customerClaims = GetCustomClaims(idToken, claimTypeList);
             var serviceManager = serviceManagerStore.GetOrAddByConnectionStringKey(connectionStringKey).ServiceManager;
-
+            var negotiateResponse = serviceManager.GetClientEndpointAsync(HubName, null, userId, customerClaims).Result;
             return new SignalRConnectionInfo
             {
-                Url = serviceManager.GetClientEndpoint(HubName),
-                AccessToken = serviceManager.GenerateClientAccessToken(
-                    HubName, userId, BuildJwtClaims(customerClaims, AzureSignalRUserPrefix).ToList())
+                Url = negotiateResponse.Url,
+                AccessToken = negotiateResponse.AccessToken
             };
         }
 
         public SignalRConnectionInfo GetClientConnectionInfo(string userId, IList<Claim> claims)
         {
             var serviceManager = serviceManagerStore.GetOrAddByConnectionStringKey(connectionStringKey).ServiceManager;
+            var negotiateResponse = serviceManager.GetClientEndpointAsync(HubName, null, userId, claims).Result;
             return new SignalRConnectionInfo
             {
-                Url = serviceManager.GetClientEndpoint(HubName),
-                AccessToken = serviceManager.GenerateClientAccessToken(
-                    HubName, userId, BuildJwtClaims(claims, AzureSignalRUserPrefix).ToList())
+                Url = negotiateResponse.Url,
+                AccessToken = negotiateResponse.AccessToken
             };
         }
 

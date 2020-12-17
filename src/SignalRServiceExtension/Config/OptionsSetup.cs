@@ -2,27 +2,21 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System;
+using Microsoft.Azure.SignalR;
 using Microsoft.Azure.SignalR.Management;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 
 namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
 {
-    internal class OptionsSetup : IConfigureOptions<ServiceManagerOptions>, IOptionsChangeTokenSource<ServiceManagerOptions>
+    internal class OptionsSetup : IConfigureOptions<ContextOptions>, IOptionsChangeTokenSource<ContextOptions>
     {
         private readonly IConfiguration configuration;
         private readonly string connectionStringKey;
-        private readonly ILogger logger;
 
-        public OptionsSetup(IConfiguration configuration, ILoggerFactory loggerFactory, string connectionStringKey)
+        public OptionsSetup(IConfiguration configuration, string connectionStringKey)
         {
-            if (loggerFactory is null)
-            {
-                throw new ArgumentNullException(nameof(loggerFactory));
-            }
-
             if (string.IsNullOrWhiteSpace(connectionStringKey))
             {
                 throw new ArgumentException($"'{nameof(connectionStringKey)}' cannot be null or whitespace", nameof(connectionStringKey));
@@ -30,25 +24,13 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
 
             this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             this.connectionStringKey = connectionStringKey;
-            logger = loggerFactory.CreateLogger<OptionsSetup>();
         }
 
         public string Name => Options.DefaultName;
 
-        public void Configure(ServiceManagerOptions options)
+        public void Configure(ContextOptions options)
         {
-            options.ConnectionString = configuration[connectionStringKey];
-            var serviceTransportTypeStr = configuration[Constants.ServiceTransportTypeName];
-            if (Enum.TryParse<ServiceTransportType>(serviceTransportTypeStr, out var transport))
-            {
-                options.ServiceTransportType = transport;
-            }
-            else
-            {
-                options.ServiceTransportType = ServiceTransportType.Transient;
-                logger.LogWarning($"Unsupported service transport type: {serviceTransportTypeStr}. Use default {ServiceTransportType.Transient} instead.");
-            }
-            //make connection more stable
+            options.ServiceEndpoints = configuration.GetSignalRServiceEndpoints(connectionStringKey);
             options.ConnectionCount = 3;
         }
 

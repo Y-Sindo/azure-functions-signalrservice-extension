@@ -16,7 +16,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
     {
         bool ValidateContentType(HttpRequestMessage request);
 
-        bool ValidateSignature(HttpRequestMessage request, string accessKey);
+        bool ValidateSignature(HttpRequestMessage request, string[] accessKeys);
 
         bool TryGetInvocationContext(HttpRequestMessage request, out InvocationContext context);
 

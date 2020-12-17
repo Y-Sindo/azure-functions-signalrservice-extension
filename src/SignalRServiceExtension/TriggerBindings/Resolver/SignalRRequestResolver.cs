@@ -36,29 +36,38 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
         }
 
         // The algorithm is defined in spec: Hex_encoded(HMAC_SHA256(access-key, connection-id))
-        public bool ValidateSignature(HttpRequestMessage request, string accessToken)
+        public bool ValidateSignature(HttpRequestMessage request, string[] accessKeys)
         {
             if (!_validateSignature)
             {
                 return true;
             }
 
-            if (!string.IsNullOrEmpty(accessToken) &&
-                request.Headers.TryGetValues(Constants.AsrsSignature, out var values))
+            foreach (var accessKey in accessKeys)
             {
-                var signatures = SignalRTriggerUtils.GetSignatureList(values.FirstOrDefault());
-                if (signatures == null)
+                if (!string.IsNullOrEmpty(accessKey) &&
+                     request.Headers.TryGetValues(Constants.AsrsSignature, out var values))
                 {
-                    return false;
-                }
-                using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(accessToken)))
-                {
-                    var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(request.Headers.GetValues(Constants.AsrsConnectionIdHeader).First()));
-                    var hash = "sha256=" + BitConverter.ToString(hashBytes).Replace("-", "");
-                    return signatures.Contains(hash, StringComparer.OrdinalIgnoreCase);
+                    var signatures = SignalRTriggerUtils.GetSignatureList(values.FirstOrDefault());
+                    if (signatures == null)
+                    {
+                        continue;
+                    }
+                    using (var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(accessKey)))
+                    {
+                        var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(request.Headers.GetValues(Constants.AsrsConnectionIdHeader).First()));
+                        var hash = "sha256=" + BitConverter.ToString(hashBytes).Replace("-", "");
+                        if (signatures.Contains(hash, StringComparer.OrdinalIgnoreCase))
+                        {
+                            return true;
+                        }
+                        else
+                        {
+                            continue;
+                        }
+                    }
                 }
             }
-
             return false;
         }
 

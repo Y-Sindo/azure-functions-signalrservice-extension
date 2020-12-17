@@ -3,10 +3,10 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Azure.SignalR;
 using Microsoft.Azure.SignalR.Management;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
@@ -14,25 +14,23 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
     internal class ServiceHubContextStore : IInternalServiceHubContextStore
     {
         private readonly ConcurrentDictionary<string, (Lazy<Task<IServiceHubContext>> lazy, IServiceHubContext value)> store = new ConcurrentDictionary<string, (Lazy<Task<IServiceHubContext>>, IServiceHubContext value)>(StringComparer.OrdinalIgnoreCase);
-        private readonly ILoggerFactory loggerFactory;
-        private readonly IOptionsMonitor<ServiceManagerOptions> monitor;
+        private readonly IOptionsMonitor<ContextOptions> monitor;
 
-        public IServiceManager ServiceManager { get; }
+        public IServiceContext ServiceManager { get; }
 
-        public string AccessKey => new ServiceEndpoint(monitor.CurrentValue.ConnectionString).AccessKey.Value;
+        public string[] AccessKeys => monitor.CurrentValue.ServiceEndpoints.Select(e => e.AccessKey.Value).ToArray();
 
-        public ServiceHubContextStore(IOptionsMonitor<ServiceManagerOptions> optionsMonitor, IServiceManager serviceManager, ILoggerFactory loggerFactory)
+        public ServiceHubContextStore(IOptionsMonitor<ContextOptions> optionsMonitor, IServiceContext serviceManager)
         {
             monitor = optionsMonitor;
             ServiceManager = serviceManager;
-            this.loggerFactory = loggerFactory;
         }
 
         public ValueTask<IServiceHubContext> GetAsync(string hubName)
         {
             var pair = store.GetOrAdd(hubName, 
                 (new Lazy<Task<IServiceHubContext>>(
-                    () => ServiceManager.CreateHubContextAsync(hubName, loggerFactory)), default));
+                    () => ServiceManager.CreateHubContextAsync(hubName)), default));
             return GetAsyncCore(hubName, pair);
         }
 

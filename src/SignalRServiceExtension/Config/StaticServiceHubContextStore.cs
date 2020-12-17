@@ -7,7 +7,7 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
     /// A global <see cref="IServiceManagerStore"/> for the extension.
     /// It stores <see cref="IServiceHubContextStore"/> per set of connection strings.
     /// </summary>
-    public static class StaticServiceHubContextStore
+    internal static class StaticServiceHubContextStore
     {
         public static IServiceHubContextStore Get(string connectionStringSetting = Constants.AzureSignalRConnectionStringName) =>
             ServiceManagerStore.GetOrAddByConnectionStringKey(connectionStringSetting);

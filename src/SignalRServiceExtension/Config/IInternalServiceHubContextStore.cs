@@ -5,6 +5,6 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
 {
     internal interface IInternalServiceHubContextStore : IServiceHubContextStore
     {
-        string AccessKey { get; }
+        string[] AccessKeys { get; }
     }
 }

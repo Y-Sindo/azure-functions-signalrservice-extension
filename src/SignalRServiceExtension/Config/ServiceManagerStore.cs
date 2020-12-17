@@ -41,12 +41,12 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
 
         private IInternalServiceHubContextStore CreateHubContextStore(string connectionStringKey)
         {
-            return new ServiceCollection().AddSignalRServiceManager()
+            return new ServiceCollection()
+                .AddSignalRServiceContext(new OptionsSetup(configuration,connectionStringKey))
                 .WithAssembly(Assembly.GetExecutingAssembly())
-                .SetupOptions<ServiceManagerOptions, OptionsSetup>(new OptionsSetup(configuration, loggerFactory, connectionStringKey))
-                .PostConfigure<ServiceManagerOptions>(o =>
+                .PostConfigure<ContextOptions>(o =>
                 {
-                    if (string.IsNullOrWhiteSpace(o.ConnectionString))
+                    if (o.ServiceEndpoints==null || o.ServiceEndpoints.Length==0)
                     {
                         throw new InvalidOperationException(ErrorMessages.EmptyConnectionStringErrorMessageFormat);
                     }

@@ -10,6 +10,6 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
     {
         public ITriggeredFunctionExecutor Executor { get; set; }
 
-        public string AccessKey { get; set; }
+        public string[] AccessKeys { get; set; }
     }
 }

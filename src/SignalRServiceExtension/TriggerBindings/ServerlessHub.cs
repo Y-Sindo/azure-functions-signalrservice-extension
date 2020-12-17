@@ -23,17 +23,17 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
     /// <see cref="System.Threading.CancellationToken"/>, or marked by <see cref="SignalRIgnoreAttribute"/>.
     /// Note that <see cref="SignalRTriggerAttribute"/> MUST use parameterless constructor in class based model.
     /// </summary>
-    public abstract class ServerlessHub : IDisposable
+    internal abstract class ServerlessHub : IDisposable
     {
         private static readonly Lazy<JwtSecurityTokenHandler> JwtSecurityTokenHandler = new Lazy<JwtSecurityTokenHandler>(() => new JwtSecurityTokenHandler());
         private bool _disposed;
-        private readonly IServiceManager _serviceManager;
+        private readonly IServiceContext _serviceManager;
 
         /// <summary>
         /// Leave the parameters to be null when called by Azure Function infrastructure.
         /// Or you can pass in your parameters in testing.
         /// </summary>
-        protected ServerlessHub(IServiceHubContext hubContext = null, IServiceManager serviceManager = null)
+        protected ServerlessHub(IServiceHubContext hubContext = null, IServiceContext serviceManager = null)
         {
             HubName = GetType().Name;
             hubContext = hubContext ?? StaticServiceHubContextStore.Get().GetAsync(HubName).GetAwaiter().GetResult();
@@ -68,10 +68,11 @@ namespace Microsoft.Azure.WebJobs.Extensions.SignalRService
         /// </summary>
         protected SignalRConnectionInfo Negotiate(string userId = null, IList<Claim> claims = null, TimeSpan? lifeTime = null)
         {
+            var negotiateResponse = _serviceManager.GetClientEndpointAsync(HubName, null, userId, claims, lifeTime).Result;
             return new SignalRConnectionInfo
             {
-                Url = _serviceManager.GetClientEndpoint(HubName),
-                AccessToken = _serviceManager.GenerateClientAccessToken(HubName, userId, claims, lifeTime)
+                Url = negotiateResponse.Url,
+                AccessToken = negotiateResponse.AccessToken
             };
         }
 
